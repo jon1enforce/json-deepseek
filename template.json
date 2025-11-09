@@ -1,0 +1,204 @@
+{
+  "template_typ": "AI_Projekt_Spezifikation_JSON",
+  "version": "1.0",
+  "beschreibung": "Generisches_JSON_Template_für_AI-gestützte_Projektentwicklung",
+  
+  "projekt_grundlagen": {
+    "name": "Projekt_Name",
+    "ziel": "Kurze_Beschreibung_was_erreicht_werden_soll",
+    "typ": "Web_App/Mobile_App/Desktop_App/API/Embedded_System",
+    "zielsysteme": ["linux", "windows", "macos", "android", "ios"]
+  },
+  
+  "tech_stack": {
+    "frontend": {
+      "framework": "React/Vue/Angular/Tkinter/Flutter",
+      "sprache": "JavaScript/TypeScript/Python/Dart",
+      "besonderheiten": ["Responsive_Design", "PWA", "Offline_Fähigkeit"]
+    },
+    "backend": {
+      "framework": "Node.js/Django/Flask/Spring/.NET",
+      "sprache": "JavaScript/Python/Java/C#",
+      "datenbank": "PostgreSQL/MySQL/MongoDB/SQLite",
+      "api_typ": "REST/GraphQL/WebSocket"
+    },
+    "devops": {
+      "container": "Docker/Podman",
+      "deployment": "AWS/Azure/GCP/On-Premise",
+      "ci_cd": "GitHub_Actions/GitLab_CI/Jenkins"
+    }
+  },
+  
+  "funktionale_anforderungen": {
+    "hauptfunktionen": [
+      {
+        "name": "Funktion_1_Name",
+        "beschreibung": "Was_diese_Funktion_tut",
+        "priorität": "hoch/mittel/niedrig",
+        "akzeptanzkriterien": [
+          "Kriterium_1",
+          "Kriterium_2"
+        ]
+      },
+      {
+        "name": "Funktion_2_Name", 
+        "beschreibung": "Was_diese_Funktion_tut",
+        "priorität": "hoch/mittel/niedrig",
+        "akzeptanzkriterien": [
+          "Kriterium_1",
+          "Kriterium_2"
+        ]
+      }
+    ],
+    
+    "benutzer_rollen": [
+      {
+        "rolle": "Admin",
+        "berechtigungen": ["alles", "benutzer_verwalten"]
+      },
+      {
+        "rolle": "Benutzer", 
+        "berechtigungen": ["eigene_daten", "lesen", "schreiben"]
+      },
+      {
+        "rolle": "Gast",
+        "berechtigungen": ["lesen"]
+      }
+    ]
+  },
+  
+  "nicht_funktionale_anforderungen": {
+    "performance": {
+      "ladezeiten": "<2_Sekunden",
+      "gleichzeitige_nutzer": 1000,
+      "daten_throughput": "100_requests_pro_sekunde"
+    },
+    "sicherheit": {
+      "authentifizierung": "OAuth2/JWT/Basic_Auth",
+      "verschlüsselung": "TLS_1.3",
+      "datenschutz": "GDPR/DSGVO_konform"
+    },
+    "skalierbarkeit": {
+      "horizontal": true,
+      "vertikal": true,
+      "auto_scaling": true
+    },
+    "wartbarkeit": {
+      "test_coverage": ">80%",
+      "dokumentation": "API_Docs/User_Guide",
+      "logging": "Structured_Logging"
+    }
+  },
+  
+  "datenmodell": {
+    "entitäten": [
+      {
+        "name": "User",
+        "attribute": {
+          "id": "UUID",
+          "email": "string",
+          "password_hash": "string", 
+          "created_at": "datetime"
+        },
+        "beziehungen": ["has_many_Posts"]
+      },
+      {
+        "name": "Post",
+        "attribute": {
+          "id": "UUID", 
+          "title": "string",
+          "content": "text",
+          "user_id": "UUID"
+        },
+        "beziehungen": ["belongs_to_User"]
+      }
+    ]
+  },
+  
+  "api_endpoints": [
+    {
+      "path": "/api/v1/users",
+      "method": "GET",
+      "beschreibung": "Liste_aller_Benutzer",
+      "parameter": {
+        "page": "integer",
+        "limit": "integer"
+      },
+      "response": {
+        "typ": "array",
+        "schema": "User_Object"
+      }
+    },
+    {
+      "path": "/api/v1/users/{id}",
+      "method": "GET", 
+      "beschreibung": "Einzelnen_Benutzer_abrufen",
+      "parameter": {
+        "id": "UUID"
+      },
+      "response": {
+        "typ": "object", 
+        "schema": "User_Object"
+      }
+    }
+  ],
+  
+  "teststrategie": {
+    "unit_tests": {
+      "abdeckung": "Business_Logic",
+      "tools": ["Jest/pytest/JUnit"]
+    },
+    "integration_tests": {
+      "abdeckung": "API_Endpoints", 
+      "tools": ["Supertest/Postman"]
+    },
+    "ui_tests": {
+      "abdeckung": "Benutzeroberfläche",
+      "tools": ["Cypress/Selenium"]
+    },
+    "leistungstests": {
+      "abdeckung": "Skalierbarkeit",
+      "tools": ["k6/Gatling"]
+    }
+  },
+  
+  "entwicklungs_zeitplan": {
+    "phase_1": {
+      "name": "MVP",
+      "dauer": "4_Wochen",
+      "features": ["User_Auth", "Basic_CRUD"]
+    },
+    "phase_2": {
+      "name": "Erweiterung", 
+      "dauer": "3_Wochen",
+      "features": ["Advanced_Features", "Reporting"]
+    },
+    "phase_3": {
+      "name": "Optimierung",
+      "dauer": "2_Wochen", 
+      "features": ["Performance", "Polish"]
+    }
+  },
+  
+  "ai_spezifische_anforderungen": {
+    "prompt_template": "JSON_basierte_Spezifikation",
+    "code_generation": {
+      "sprachen": ["Python", "JavaScript", "TypeScript"],
+      "frameworks": ["React", "Express", "Django"]
+    },
+    "dokumentation": {
+      "automatisch_generieren": true,
+      "formate": ["API_Docs", "User_Guide", "Architecture_Docs"]
+    }
+  },
+  
+  "notizen_für_ai": {
+    "verwendungszweck": "Dieses_Template_dient_als_Struktur_für_AI-gestützte_Projektentwicklung",
+    "anpassungshinweise": "Felder_nach_Bedarf_anpassen_oder_erweitern",
+    "best_practices": [
+      "Konsistente_Benennung_verwenden",
+      "Unterstrich_statt_Leerzeichen_für_Keys",
+      "Datenstrukturen_so_einfach_wie_möglich_halten"
+    ]
+  }
+}
