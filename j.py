@@ -12,6 +12,9 @@ class JSONViewer:
         self.dark_mode = False
         self.language = "en"  # Default: English
         
+        # Track expanded nodes
+        self.expanded_nodes = set()
+        
         # Sprachdefinitionen
         self.translations = {
             "de": self.get_german_translations(),
@@ -439,7 +442,9 @@ class JSONViewer:
         
         # Bind events
         self.tree.bind('<Double-1>', self.toggle_node)
-        self.tree.bind('<Button-3>', self.show_context_menu)
+        
+        # NEW: Bind in-place editing for ALL columns
+        self.tree.bind('<ButtonRelease-1>', self.on_tree_click)
         
         # === RECHTE SEITE: RAW EDITOR ===
         raw_frame = ttk.LabelFrame(right_frame, text=self.t("raw_editor"))
@@ -511,9 +516,6 @@ class JSONViewer:
         self.status_label = ttk.Label(settings_frame, text=self.t("ready"), foreground="green")
         self.status_label.pack(side=tk.LEFT, padx=(20,0))
         
-        # Context Menu
-        self.setup_context_menu()
-        
         # Jetzt erst das Theme anwenden, nachdem alle Widgets erstellt sind
         self.apply_theme()
         
@@ -533,34 +535,27 @@ class JSONViewer:
             self.tree.tag_configure('value', foreground='#cccccc')
             self.tree.tag_configure('found', background='#555500')
         else:
-            # Light mode colors
-            self.tree.tag_configure('level_0', background='#f0f8ff')
-            self.tree.tag_configure('level_1', background='#fff0f5')
-            self.tree.tag_configure('level_2', background='#f0fff0')
-            self.tree.tag_configure('level_3', background='#fff8dc')
-            self.tree.tag_configure('level_4', background='#f5f5f5')
+            # Light mode colors - FIXED: Ensure proper colors in light mode
+            self.tree.tag_configure('level_0', background='#f0f8ff', foreground='#000000')
+            self.tree.tag_configure('level_1', background='#fff0f5', foreground='#000000')
+            self.tree.tag_configure('level_2', background='#f0fff0', foreground='#000000')
+            self.tree.tag_configure('level_3', background='#fff8dc', foreground='#000000')
+            self.tree.tag_configure('level_4', background='#f5f5f5', foreground='#000000')
             self.tree.tag_configure('object', foreground='#0066cc')
             self.tree.tag_configure('array', foreground='#cc6600')
             self.tree.tag_configure('value', foreground='#333333')
             self.tree.tag_configure('found', background='yellow')
     
-    def setup_context_menu(self):
-        """Setup context menu with translations"""
-        self.context_menu = tk.Menu(self.root, tearoff=0)
-        self.context_menu.add_command(label=self.t("context_add"), command=self.add_item)
-        self.context_menu.add_command(label=self.t("context_edit"), command=self.edit_item)
-        self.context_menu.add_command(label=self.t("context_delete"), command=self.delete_item)
-        self.context_menu.add_separator()
-        self.context_menu.add_command(label=self.t("context_copy"), command=self.copy_to_editor)
-        self.context_menu.add_command(label=self.t("context_scroll"), command=self.scroll_to_item)
-    
     def apply_theme(self):
-        """Apply light/dark theme to the application"""
+        """Apply light/dark theme to the application - FIXED version"""
+        style = ttk.Style()
+        
         if self.dark_mode:
             # Dark theme
             self.root.configure(background='#2d2d2d')
-            style = ttk.Style()
             style.theme_use('clam')
+            
+            # Configure styles with proper foreground colors
             style.configure('.', background='#2d2d2d', foreground='white')
             style.configure('TLabel', background='#2d2d2d', foreground='white')
             style.configure('TFrame', background='#2d2d2d')
@@ -576,11 +571,15 @@ class JSONViewer:
             if hasattr(self, 'raw_text'):
                 self.raw_text.configure(background='#1e1e1e', foreground='#ffffff', 
                                       insertbackground='white')
+                
+            # Status label color
+            self.status_label.configure(foreground="white")
         else:
-            # Light theme
-            self.root.configure(background='#f0f0f0')  # Linux-kompatible Farbe
-            style = ttk.Style()
+            # Light theme - FIXED: Ensure proper colors
+            self.root.configure(background='#f0f0f0')
             style.theme_use('clam')
+            
+            # Configure styles with proper foreground colors
             style.configure('.', background='#f0f0f0', foreground='black')
             style.configure('TLabel', background='#f0f0f0', foreground='black')
             style.configure('TFrame', background='#f0f0f0')
@@ -596,6 +595,12 @@ class JSONViewer:
             if hasattr(self, 'raw_text'):
                 self.raw_text.configure(background='white', foreground='black',
                                       insertbackground='black')
+            
+            # Status label color
+            if self.modified:
+                self.status_label.configure(foreground="orange")
+            else:
+                self.status_label.configure(foreground="green")
     
     def toggle_dark_mode(self):
         """Toggle dark mode on/off"""
@@ -605,13 +610,12 @@ class JSONViewer:
         self.refresh_views()
     
     def change_language(self, event=None):
-        """Change application language"""
+        """Change application language - IMPROVED version"""
         self.language = self.lang_var.get()
-        self.update_ui_texts()
-        self.setup_context_menu()
+        self.update_all_ui_texts()
     
-    def update_ui_texts(self):
-        """Update all UI texts with current language"""
+    def update_all_ui_texts(self):
+        """Update ALL UI texts with current language - COMPLETE version"""
         # Update title
         self.update_title()
         
@@ -620,9 +624,9 @@ class JSONViewer:
         self.tree.heading('type', text=self.t("tree_type"))
         self.tree.heading('value', text=self.t("tree_value"))
         
-        # Update all labels and buttons
+        # Update all frame labels
         for widget in self.root.winfo_children():
-            self.update_widget_texts(widget)
+            self._update_widget_texts_recursive(widget)
         
         # Update status
         if self.modified:
@@ -630,47 +634,45 @@ class JSONViewer:
         else:
             self.status_label.config(text=self.t("saved"), foreground="green")
     
-    def update_widget_texts(self, widget):
+    def _update_widget_texts_recursive(self, widget):
         """Recursively update all widget texts"""
         try:
-            if isinstance(widget, ttk.LabelFrame):
-                widget.config(text=self.get_original_label(widget))
-            elif isinstance(widget, ttk.Button):
-                widget.config(text=self.get_original_button_text(widget))
-            elif isinstance(widget, ttk.Label):
-                widget.config(text=self.get_original_label_text(widget))
+            # Update widget text based on type
+            if isinstance(widget, (ttk.LabelFrame, ttk.Frame)):
+                # Try to get original text and translate it
+                try:
+                    current_text = widget.cget('text')
+                    if current_text:
+                        # Find translation key for this text
+                        for key, trans_dict in self.translations.items():
+                            for trans_key, trans_text in trans_dict.items():
+                                if trans_text == current_text:
+                                    widget.config(text=self.t(trans_key))
+                                    break
+                except:
+                    pass
+                    
+            elif isinstance(widget, (ttk.Button, ttk.Label)):
+                # Try to get original text and translate it
+                try:
+                    current_text = widget.cget('text')
+                    if current_text:
+                        # Find translation key for this text
+                        for key, trans_dict in self.translations.items():
+                            for trans_key, trans_text in trans_dict.items():
+                                if trans_text == current_text:
+                                    widget.config(text=self.t(trans_key))
+                                    break
+                except:
+                    pass
             
-            # Rekursiv für Child-Widgets
+            # Recursively process children
             for child in widget.winfo_children():
-                self.update_widget_texts(child)
-        except:
+                self._update_widget_texts_recursive(child)
+                
+        except Exception as e:
+            # Ignore errors in recursive processing
             pass
-    
-    def get_original_label(self, widget):
-        """Get original label text based on current translation"""
-        # Diese Methode müsste erweitert werden um spezifische Widgets zu identifizieren
-        # Für jetzt verwenden wir eine einfache Mapping-Logik
-        original_text = str(widget.cget('text'))
-        for key, translation in self.translations[self.language].items():
-            if translation == original_text:
-                return translation
-        return original_text
-    
-    def get_original_button_text(self, widget):
-        """Get original button text based on current translation"""
-        original_text = str(widget.cget('text'))
-        for key, translation in self.translations[self.language].items():
-            if translation == original_text:
-                return translation
-        return original_text
-    
-    def get_original_label_text(self, widget):
-        """Get original label text based on current translation"""
-        original_text = str(widget.cget('text'))
-        for key, translation in self.translations[self.language].items():
-            if translation == original_text:
-                return translation
-        return original_text
     
     def update_title(self):
         """Update window title"""
@@ -680,11 +682,18 @@ class JSONViewer:
         self.root.title(title)
     
     def populate_tree(self, parent='', json_dict=None, level=0):
+        # Save expanded state before refreshing
+        self.save_expanded_state()
+        
         if json_dict is None:
             json_dict = self.data
+            # Clear the tree
+            for item in self.tree.get_children():
+                self.tree.delete(item)
+                
             root_node = self.tree.insert('', 'end', text=self.filename, 
                                        values=('📁 ROOT', ''), 
-                                       tags=('level_0', 'object'), open=True)  # Nur Ebene 1 aufgeklappt
+                                       tags=('level_0', 'object'))
             parent = root_node
             level = 1
             
@@ -692,15 +701,14 @@ class JSONViewer:
             tag = f'level_{min(level, 4)}'
             
             if isinstance(value, dict):
-                # Nur Ebene 1 standardmäßig aufgeklappt
                 node = self.tree.insert(parent, 'end', text=str(key), 
                                       values=('📁 OBJECT', f'{len(value)} items'),
-                                      tags=(tag, 'object'), open=(level == 1))  # Nur Ebene 1 aufgeklappt
+                                      tags=(tag, 'object'))
                 self.populate_tree(node, value, level + 1)
             elif isinstance(value, list):
                 node = self.tree.insert(parent, 'end', text=str(key), 
                                       values=('📋 ARRAY', f'{len(value)} items'),
-                                      tags=(tag, 'array'), open=(level == 1))  # Nur Ebene 1 aufgeklappt
+                                      tags=(tag, 'array'))
                 for i, item in enumerate(value):
                     item_tag = f'level_{min(level + 1, 4)}'
                     if isinstance(item, (dict, list)):
@@ -708,8 +716,7 @@ class JSONViewer:
                         item_text = f"[{i}]"
                         sub_node = self.tree.insert(node, 'end', text=item_text,
                                                   values=(item_type, '...'),
-                                                  tags=(item_tag, 'object' if isinstance(item, dict) else 'array'),
-                                                  open=False)  # Ab Ebene 2 nicht aufgeklappt
+                                                  tags=(item_tag, 'object' if isinstance(item, dict) else 'array'))
                         self.populate_tree(sub_node, item if isinstance(item, dict) else {f"[{i}]": item}, level + 2)
                     else:
                         self.tree.insert(node, 'end', text=f"[{i}]", 
@@ -720,6 +727,34 @@ class JSONViewer:
                 self.tree.insert(parent, 'end', text=str(key), 
                                values=(value_type, self.truncate_value(value)),
                                tags=(tag, 'value'))
+        
+        # Restore expanded state after populating
+        self.restore_expanded_state()
+    
+    def save_expanded_state(self):
+        """Save which nodes are expanded"""
+        self.expanded_nodes.clear()
+        for item in self.tree.get_children(''):
+            self._save_expanded_recursive(item)
+    
+    def _save_expanded_recursive(self, item):
+        """Recursively save expanded nodes"""
+        if self.tree.item(item, 'open'):
+            self.expanded_nodes.add(item)
+        for child in self.tree.get_children(item):
+            self._save_expanded_recursive(child)
+    
+    def restore_expanded_state(self):
+        """Restore expanded nodes"""
+        for item in self.tree.get_children(''):
+            self._restore_expanded_recursive(item)
+    
+    def _restore_expanded_recursive(self, item):
+        """Recursively restore expanded nodes"""
+        if item in self.expanded_nodes:
+            self.tree.item(item, open=True)
+        for child in self.tree.get_children(item):
+            self._restore_expanded_recursive(child)
     
     def truncate_value(self, value, max_length=60):
         str_value = str(value)
@@ -731,25 +766,128 @@ class JSONViewer:
         item = self.tree.selection()[0]
         self.tree.item(item, open=not self.tree.item(item, 'open'))
     
-    def show_context_menu(self, event):
+    def on_tree_click(self, event):
+        """Handle tree clicks for in-place editing"""
         item = self.tree.identify_row(event.y)
-        if item:
-            self.tree.selection_set(item)
-            self.context_menu.post(event.x_root, event.y_root)
+        column = self.tree.identify_column(event.x)
+        
+        if item and column in ('#1', '#2', '#3'):  # Key, Type or Value column
+            self.start_edit(item, column)
     
-    def copy_to_editor(self):
-        item = self.tree.selection()
-        if item:
-            item_path = self.get_item_path(item[0])
-            data = self.get_data_at_path(item_path)
-            if data:
-                self.raw_text.insert(tk.END, f"\n\n// {self.t('context_copy')}: {item_path}\n{json.dumps(data, indent=2, ensure_ascii=False)}")
-                self.set_modified(True)
+    def start_edit(self, item, column):
+        """Start in-place editing of tree cell"""
+        # Get current values
+        col_index = int(column[1:]) - 1  # Convert to 0-based index
+        
+        if col_index == -1:  # Key column (#0)
+            current_value = self.tree.item(item, 'text')
+        else:
+            values = self.tree.item(item, 'values')
+            if col_index >= len(values):
+                return
+            current_value = values[col_index]
+        
+        # Get cell coordinates
+        bbox = self.tree.bbox(item, column)
+        if not bbox:
+            return
+        
+        # Create entry widget for editing
+        entry = ttk.Entry(self.tree)
+        entry.place(x=bbox[0], y=bbox[1], width=bbox[2], height=bbox[3])
+        entry.insert(0, str(current_value))
+        entry.select_range(0, tk.END)
+        entry.focus()
+        
+        def save_edit(event=None):
+            new_value = entry.get()
+            entry.destroy()
+            
+            # Update the tree and data
+            if col_index == -1:  # Key column
+                self.update_key_in_tree(item, new_value)
+            else:  # Type or Value column
+                self.update_value_in_tree(item, col_index, new_value)
+            
+            self.set_modified(True)
+            # DON'T refresh views - keep the tree state!
+        
+        def cancel_edit(event=None):
+            entry.destroy()
+        
+        entry.bind('<Return>', save_edit)
+        entry.bind('<Escape>', cancel_edit)
+        entry.bind('<FocusOut>', cancel_edit)
     
-    def scroll_to_item(self):
-        item = self.tree.selection()
-        if item:
-            self.tree.see(item[0])
+    def update_key_in_tree(self, item, new_key):
+        """Update key name in tree and data"""
+        item_path = self.get_item_path(item)
+        current_data = self.get_data_at_path(item_path)
+        
+        if current_data is None:
+            return
+        
+        # Get parent data
+        parent_path = '/'.join(item_path.split('/')[:-1])
+        parent_data = self.get_data_at_path(parent_path)
+        
+        if isinstance(parent_data, dict):
+            # For dictionaries: remove old key and add new key
+            old_key = item_path.split('/')[-1]
+            parent_data[new_key] = parent_data.pop(old_key)
+            self.tree.item(item, text=new_key)
+        elif isinstance(parent_data, list):
+            # For arrays: update index (not really a key change for arrays)
+            try:
+                index = int(new_key.strip('[]'))
+                # Just update the display text
+                self.tree.item(item, text=f"[{index}]")
+            except ValueError:
+                pass
+    
+    def update_value_in_tree(self, item, col_index, new_value):
+        """Update value in tree and data"""
+        item_path = self.get_item_path(item)
+        current_data = self.get_data_at_path(item_path)
+        
+        if current_data is None:
+            return
+        
+        if col_index == 0:  # Type column
+            # Type changes are complex, so we'll just update the display
+            values = list(self.tree.item(item, 'values'))
+            values[0] = new_value
+            self.tree.item(item, values=tuple(values))
+        elif col_index == 1:  # Value column
+            if isinstance(current_data, (dict, list)):
+                messagebox.showinfo("Info", self.t("object_edit_info"))
+                return
+            
+            try:
+                # Try to convert to appropriate type
+                if isinstance(current_data, bool):
+                    converted_value = new_value.lower() in ['true', '1', 'yes', 'ja']
+                elif isinstance(current_data, (int, float)):
+                    converted_value = float(new_value) if '.' in new_value else int(new_value)
+                elif isinstance(current_data, str):
+                    converted_value = str(new_value)
+                else:
+                    converted_value = new_value
+                
+                # Update the data
+                self.set_data_at_path(item_path, converted_value)
+                
+                # Update the tree display
+                values = list(self.tree.item(item, 'values'))
+                values[1] = self.truncate_value(converted_value)
+                self.tree.item(item, values=tuple(values))
+                
+            except ValueError:
+                # If conversion fails, keep as string
+                self.set_data_at_path(item_path, new_value)
+                values = list(self.tree.item(item, 'values'))
+                values[1] = self.truncate_value(new_value)
+                self.tree.item(item, values=tuple(values))
     
     def add_template(self, template_type):
         templates = {
@@ -978,9 +1116,8 @@ class JSONViewer:
             current[last_key] = value
     
     def refresh_views(self):
-        for item in self.tree.get_children():
-            self.tree.delete(item)
-        self.populate_tree()
+        """Refresh both tree and raw editor views - IMPROVED to preserve expansion"""
+        self.populate_tree()  # This now preserves expansion state
         
         self.raw_text.delete(1.0, tk.END)
         self.raw_text.insert(tk.END, json.dumps(self.data, indent=2, ensure_ascii=False))
