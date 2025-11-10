@@ -10,7 +10,7 @@ class JSONViewer:
         self.filename = filename
         self.modified = False
         self.dark_mode = False
-        self.language = "de"  # Default: Deutsch
+        self.language = "en"  # Default: English
         
         # Sprachdefinitionen
         self.translations = {
@@ -29,7 +29,7 @@ class JSONViewer:
         return {
             "title": "JSON Editor",
             "structure": "📁 JSON Struktur",
-            "raw_editor": "📝 Raw JSON Editor",
+            "raw_editor": "📝 Raw JSON Editor", 
             "templates": "🚀 Schnell-Templates",
             "add": "➕ Hinzufügen",
             "edit": "✏️ Bearbeiten",
@@ -68,17 +68,20 @@ class JSONViewer:
             "template_prompt": "Template Name:",
             "edit_prompt": "Aktueller Wert: {}\nNeuer Wert:",
             "context_add": "➕ Hinzufügen",
-            "context_edit": "✏️ Bearbeiten",
+            "context_edit": "✏️ Bearbeiten", 
             "context_delete": "🗑️ Löschen",
             "context_copy": "📋 In Editor kopieren",
             "context_scroll": "🎯 Zu diesem Punkt scrollen",
-            "object_edit_info": "Objekte und Arrays können nur über Raw-Editor bearbeitet werden."
+            "object_edit_info": "Objekte und Arrays können nur über Raw-Editor bearbeitet werden.",
+            "tree_key": "Schlüssel / Eigenschaft",
+            "tree_type": "Typ",
+            "tree_value": "Wert"
         }
     
     def get_english_translations(self):
         return {
             "title": "JSON Editor",
-            "structure": "📁 JSON Structure",
+            "structure": "📁 JSON Structure", 
             "raw_editor": "📝 Raw JSON Editor",
             "templates": "🚀 Quick Templates",
             "add": "➕ Add",
@@ -122,7 +125,10 @@ class JSONViewer:
             "context_delete": "🗑️ Delete",
             "context_copy": "📋 Copy to editor",
             "context_scroll": "🎯 Scroll to this point",
-            "object_edit_info": "Objects and arrays can only be edited via Raw Editor."
+            "object_edit_info": "Objects and arrays can only be edited via Raw Editor.",
+            "tree_key": "Key / Property",
+            "tree_type": "Type", 
+            "tree_value": "Value"
         }
     
     def get_spanish_translations(self):
@@ -172,7 +178,10 @@ class JSONViewer:
             "context_delete": "🗑️ Eliminar",
             "context_copy": "📋 Copiar al editor",
             "context_scroll": "🎯 Desplazar a este punto",
-            "object_edit_info": "Objetos y arrays solo pueden editarse mediante Editor Raw."
+            "object_edit_info": "Objetos y arrays solo pueden editarse mediante Editor Raw.",
+            "tree_key": "Clave / Propiedad",
+            "tree_type": "Tipo",
+            "tree_value": "Valor"
         }
     
     def get_chinese_translations(self):
@@ -222,7 +231,10 @@ class JSONViewer:
             "context_delete": "🗑️ 删除",
             "context_copy": "📋 复制到编辑器",
             "context_scroll": "🎯 滚动到此点",
-            "object_edit_info": "对象和数组只能通过原始编辑器编辑。"
+            "object_edit_info": "对象和数组只能通过原始编辑器编辑。",
+            "tree_key": "键 / 属性",
+            "tree_type": "类型",
+            "tree_value": "值"
         }
     
     def get_japanese_translations(self):
@@ -272,7 +284,10 @@ class JSONViewer:
             "context_delete": "🗑️ 削除",
             "context_copy": "📋 エディタにコピー",
             "context_scroll": "🎯 このポイントにスクロール",
-            "object_edit_info": "オブジェクトと配列はRawエディタでのみ編集できます。"
+            "object_edit_info": "オブジェクトと配列はRawエディタでのみ編集できます。",
+            "tree_key": "キー / プロパティ",
+            "tree_type": "タイプ",
+            "tree_value": "値"
         }
     
     def get_korean_translations(self):
@@ -322,7 +337,10 @@ class JSONViewer:
             "context_delete": "🗑️ 삭제",
             "context_copy": "📋 편집기에 복사",
             "context_scroll": "🎯 이 지점으로 스크롤",
-            "object_edit_info": "객체와 배열은 Raw 편집기를 통해서만 편집할 수 있습니다."
+            "object_edit_info": "객체와 배열은 Raw 편집기를 통해서만 편집할 수 있습니다.",
+            "tree_key": "키 / 속성",
+            "tree_type": "유형",
+            "tree_value": "값"
         }
     
     def t(self, key):
@@ -338,22 +356,22 @@ class JSONViewer:
             with open(self.filename, 'r', encoding='utf-8') as f:
                 content = f.read()
                 self.data = json.loads(content)
-            print(f"✅ JSON-Datei '{self.filename}' erfolgreich geladen!")
+            print(f"✅ JSON file '{self.filename}' loaded successfully!")
             self.modified = False
             return True
         except json.JSONDecodeError as e:
             error_msg = f"{self.t('syntax_error')}:\n{e}\n\n"
-            error_msg += f"Position: Zeile {e.lineno}, Spalte {e.colno}\n"
+            error_msg += f"Position: Line {e.lineno}, Column {e.colno}\n"
             
             lines = content.split('\n')
             if e.lineno <= len(lines):
-                error_msg += f"Fehlerhafte Zeile:\n{lines[e.lineno-1]}\n"
+                error_msg += f"Error line:\n{lines[e.lineno-1]}\n"
                 error_msg += " " * (e.colno - 1) + "^\n"
             
             messagebox.showerror(self.t("syntax_error"), error_msg)
             return False
         except Exception as e:
-            messagebox.showerror("Fehler", f"Fehler beim Laden: {e}")
+            messagebox.showerror("Error", f"Loading error: {e}")
             return False
     
     def setup_gui(self):
@@ -398,9 +416,9 @@ class JSONViewer:
         tree_container.pack(fill=tk.BOTH, expand=True)
         
         self.tree = ttk.Treeview(tree_container, columns=('type', 'value'), show='tree headings', height=25)
-        self.tree.heading('#0', text='Key / Property')
-        self.tree.heading('type', text='Typ')
-        self.tree.heading('value', text='Wert')
+        self.tree.heading('#0', text=self.t("tree_key"))
+        self.tree.heading('type', text=self.t("tree_type"))
+        self.tree.heading('value', text=self.t("tree_value"))
         
         # Spaltenbreiten anpassen
         self.tree.column('#0', width=300, minwidth=200)
@@ -597,11 +615,62 @@ class JSONViewer:
         # Update title
         self.update_title()
         
+        # Update tree headings
+        self.tree.heading('#0', text=self.t("tree_key"))
+        self.tree.heading('type', text=self.t("tree_type"))
+        self.tree.heading('value', text=self.t("tree_value"))
+        
+        # Update all labels and buttons
+        for widget in self.root.winfo_children():
+            self.update_widget_texts(widget)
+        
         # Update status
         if self.modified:
             self.status_label.config(text=self.t("modified"), foreground="orange")
         else:
             self.status_label.config(text=self.t("saved"), foreground="green")
+    
+    def update_widget_texts(self, widget):
+        """Recursively update all widget texts"""
+        try:
+            if isinstance(widget, ttk.LabelFrame):
+                widget.config(text=self.get_original_label(widget))
+            elif isinstance(widget, ttk.Button):
+                widget.config(text=self.get_original_button_text(widget))
+            elif isinstance(widget, ttk.Label):
+                widget.config(text=self.get_original_label_text(widget))
+            
+            # Rekursiv für Child-Widgets
+            for child in widget.winfo_children():
+                self.update_widget_texts(child)
+        except:
+            pass
+    
+    def get_original_label(self, widget):
+        """Get original label text based on current translation"""
+        # Diese Methode müsste erweitert werden um spezifische Widgets zu identifizieren
+        # Für jetzt verwenden wir eine einfache Mapping-Logik
+        original_text = str(widget.cget('text'))
+        for key, translation in self.translations[self.language].items():
+            if translation == original_text:
+                return translation
+        return original_text
+    
+    def get_original_button_text(self, widget):
+        """Get original button text based on current translation"""
+        original_text = str(widget.cget('text'))
+        for key, translation in self.translations[self.language].items():
+            if translation == original_text:
+                return translation
+        return original_text
+    
+    def get_original_label_text(self, widget):
+        """Get original label text based on current translation"""
+        original_text = str(widget.cget('text'))
+        for key, translation in self.translations[self.language].items():
+            if translation == original_text:
+                return translation
+        return original_text
     
     def update_title(self):
         """Update window title"""
@@ -685,11 +754,11 @@ class JSONViewer:
     def add_template(self, template_type):
         templates = {
             "projekt_spec": {
-                "projekt_grundlagen": {
-                    "name": "Projekt_Name",
-                    "ziel": "Kurze_Beschreibung",
-                    "typ": "Web_App/Mobile_App/Desktop_App",
-                    "zielsysteme": ["linux", "windows", "macos"]
+                "project_basics": {
+                    "name": "Project_Name",
+                    "goal": "Short_Description",
+                    "type": "Web_App/Mobile_App/Desktop_App",
+                    "target_systems": ["linux", "windows", "macos"]
                 }
             },
             "api_design": {
@@ -698,32 +767,32 @@ class JSONViewer:
                     {
                         "path": "/users",
                         "method": "GET",
-                        "beschreibung": "Liste_der_Benutzer"
+                        "description": "List_of_Users"
                     }
                 ]
             },
             "test_cases": {
-                "test_suite": "Meine_Test_Suite",
+                "test_suite": "My_Test_Suite",
                 "test_cases": [
                     {
-                        "name": "Testfall_1",
-                        "beschreibung": "Beschreibung_des_Testfalls"
+                        "name": "Test_Case_1",
+                        "description": "Test_Case_Description"
                     }
                 ]
             },
             "config": {
-                "app_name": "Meine_App",
+                "app_name": "My_App",
                 "version": "1.0.0",
-                "einstellungen": {
+                "settings": {
                     "debug": True,
                     "port": 3000
                 }
             },
             "datenmodell": {
-                "entitäten": [
+                "entities": [
                     {
                         "name": "User",
-                        "attribute": {
+                        "attributes": {
                             "id": "UUID",
                             "email": "string"
                         }
@@ -742,7 +811,7 @@ class JSONViewer:
     def add_item(self):
         item = self.tree.selection()
         if not item:
-            messagebox.showwarning("Warnung", self.t("select_node"))
+            messagebox.showwarning("Warning", self.t("select_node"))
             return
         
         parent_item = item[0]
@@ -786,7 +855,7 @@ class JSONViewer:
     def edit_item(self):
         item = self.tree.selection()
         if not item:
-            messagebox.showwarning("Warnung", self.t("select_item"))
+            messagebox.showwarning("Warning", self.t("select_item"))
             return
         
         item_path = self.get_item_path(item[0])
@@ -983,9 +1052,9 @@ if __name__ == "__main__":
         json_files = [f for f in os.listdir('.') if f.endswith('.json')]
         if json_files:
             filename = json_files[0]
-            print(f"Verwende Datei: {filename}")
+            print(f"Using file: {filename}")
         else:
-            print("Keine JSON-Dateien gefunden!")
+            print("No JSON files found!")
             sys.exit(1)
     
     viewer = JSONViewer(filename)
